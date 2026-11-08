@@ -51,6 +51,10 @@ static uint8_t palR[5], palG[5], palB[5];
 
 void setLedState(LedState s) { wantLed = s; }
 
+void getAppStats(uint32_t* blocked, uint32_t* allowed, uint32_t* items, LedState* st) {
+  *blocked = blockCnt; *allowed = allowCnt; *items = itemsLoaded; *st = wantLed;
+}
+
 void ledApplyConfig() {
   const uint8_t bR[5] = {0,0,0,255,255};
   const uint8_t bG[5] = {255,255,0,255,0};
@@ -813,6 +817,17 @@ static bool loadBlockList(const char* reason) {
       if (restored) updateConfigVect("loadProg", "From Flash");   // honest UI state
     }
 
+    /* at boot, a valid stored list is enough: skip the download until the next scheduled update */
+    if (restored && !strcmp(reason, "Initial") && itemsLoaded > 2) {
+      LOG_ALT("Blocklist restored (%lu domains), next download at scheduled update", itemsLoaded - 2);
+      lastLoadMs = millis();
+      startupFailure[0] = 0;
+      setLedState(LED_OK);
+      loadCustom();
+      downloading = false;
+      return true;
+    }
+
     /* REPLACE semantics: a successful full download rebuilds the list from scratch
      * Rollback safety: the previous generation lives in the flash snapshot.
      * Without a snapshot (very first ever run or not enabled), fall back to merge-mode */
@@ -828,7 +843,11 @@ static bool loadBlockList(const char* reason) {
         setLedState(LED_OK); //Change Status LED
         lastLoadMs = millis();
         startupFailure[0] = 0;
-        if (useSnap) saveSnapshot(); // new generation persisted
+        if (useSnap) {
+          saveSnapshot(); // new generation persisted
+          sdBackupFile(SNAP_PATH);
+          sdBackupFile(CUSTOM_FILE_PATH);
+        }
       } else if (canReplace) {
         /* rebuild failed - reinstate previous generation from flash */
         resetBlocklistStorage();
@@ -893,8 +912,11 @@ bool appSetup() {
   resetBlocklistStorage();
   updateConfigVect("blockCnt", "0");
   updateConfigVect("allowCnt", "0");
+  useSnap = true; updateConfigVect("useSnap", "1"); // keep a stored copy so reboots do not need a download
   if (xLedPin) xTaskCreatePinnedToCore(ledTask, "ledTask", 2048, NULL, 1, NULL, 1); // Change Status LED
   if (!strlen(ST_SSID)) setLedState(LED_AP_MODE);   // setup-needed state ASAP
+  sdRestoreFile(SNAP_PATH); // only if missing in flash
+  sdRestoreFile(CUSTOM_FILE_PATH);
   loadBlockList("Initial"); // best effort - DNS starts regardless
   if (!strlen(ST_SSID)) setLedState(LED_AP_MODE); //Change Status LED
   prepDNS();

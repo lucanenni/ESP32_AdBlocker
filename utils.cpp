@@ -1353,6 +1353,7 @@ bool utilsStartup() {
   LOG_INF("Compiled with arduino-esp32 v%s", ESP_ARDUINO_VERSION_STR);
   // prep storage
   res = startStorage();
+  if (res) { sdStart(); sdRestoreFile(CONFIG_FILE_PATH); } // optional microSD: restore settings if flash copy is missing
   // Load saved user configuration
   if (res) res = loadConfig();
   sntp_set_time_sync_notification_cb(timeSyncCallback);

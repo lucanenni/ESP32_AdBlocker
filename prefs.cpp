@@ -151,6 +151,7 @@ static void saveConfigVect() {
     LOG_ALT("Config file saved %d entries", cfgCnt);
   }
   file.close();
+  sdBackupFile(CONFIG_FILE_PATH); // copy to microSD if present (passwords are already masked)
 }
 
 static bool loadConfigVect() {

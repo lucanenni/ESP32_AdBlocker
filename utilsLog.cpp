@@ -386,6 +386,9 @@ void logSetup() {
   // prep logging environment
   if (crashLoop == MAGIC_NUM) snprintf(startupFailure, SF_LEN, STARTUP_FAIL "Crash loop detected, check log %s", (brownoutStatus == 'B' || brownoutStatus == 'R') ? "(brownout)" : " ");
   crashLoop = MAGIC_NUM;
+  // a real crash loop resets within seconds, so clear the flag after stable running
+  // (otherwise any manual reset while wifi is not yet configured counts as a crash loop)
+  xTaskCreate([](void*) { vTaskDelay(pdMS_TO_TICKS(20000)); resetCrashLoop(); vTaskDelete(NULL); }, "crashClr", 2048, NULL, 1, NULL);
   if (logHandle == NULL) {
     set_arduino_panic_handler(appPanicHandler, NULL);
     Serial.begin(115200);

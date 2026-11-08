@@ -19,6 +19,7 @@
 
 void setup() { 
   bool res = utilsStartup();
+  if (res) { displayStart(); sdLogStart(); } // status display + optional microSD, before network setup
   if (res && startNetwork()) {
     // start rest of services
     appSetup();

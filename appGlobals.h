@@ -140,4 +140,11 @@ extern const char* appConfig;
 
 enum LedState { LED_OK = 0, LED_OFFLINE, LED_DOWNLOAD, LED_AP_MODE, LED_FAIL };
 void setLedState(LedState s);
+void getAppStats(uint32_t* blocked, uint32_t* allowed, uint32_t* items, LedState* st);
+void displayStart(); // display.cpp
+void sdStart(); // sdBackup.cpp
+void sdLogStart();
+bool sdMounted();
+bool sdBackupFile(const char* path);
+bool sdRestoreFile(const char* path);
 

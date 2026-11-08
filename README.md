@@ -112,3 +112,13 @@ The LED is configured using the **Settings** button in the web page tab **Edit C
 Setting the LED Pin value to 0 disables the LED.
 
 
+
+## Pocket-Dongle-S3 fork (GNPE clone of LilyGO T-Dongle-S3, ESP32-S3 N16R8)
+
+Changes in this fork, on top of the original:
+* `display.cpp`: status screen on the 0.96" ST7735 (160x80) LCD showing IP, state, blocked / allowed counts, blocklist size, wifi signal, uptime, free RAM / PSRAM. No external library. Pins: SCLK 10, MOSI 11, CS 12, DC 13, RST 14, backlight hardwired.
+* `sdBackup.cpp`: optional microSD (SD_MMC 4 bit: CLK 17, CMD 18, D0 16, D1 15, D2 48, D3 47). With a card: log saved to `/data/log.txt` on the card, and `configs.txt`, the blocklist snapshot and the custom blocklist are backed up to `/backup/data` and restored if missing in flash. Works without a card.
+* If a stored blocklist exists at boot it is loaded and the download is skipped until the next scheduled update (`useSnap` is forced on).
+* Crash loop flag is cleared after 20s of stable running, so manual resets before wifi is configured are not reported as a crash loop.
+
+Arduino IDE settings: board ESP32S3 Dev Module, PSRAM OPI, Flash 16MB, partition `8M with spiffs`, USB CDC On Boot enabled, esp32 core 3.3.x.
